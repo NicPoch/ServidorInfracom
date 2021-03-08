@@ -6,6 +6,7 @@ const crypto = require("crypto");
 const path="D:\\Datos\\Documents\\Universidad\\202110\\Infrastructura de Comunicaciones\\Laboratorios\\Laboratorio 4\\ServidorInfracom\\SocketServer\\files";
 const clients = [];
 const files=[];
+const hash=crypto.createHash("sha512");
 
 const wsConnection = (server) => {
   const wss = new WebSocket.Server({ server });
@@ -39,9 +40,10 @@ const wsConnection = (server) => {
             console.log("Error");
             return;
         }
-        let encodedData = new Buffer(data,"binary").toString('base64');
+        const encodedData = new Buffer(data,"binary").toString('base64');
+        const hashedData=hash.update(encodedData).digest('hex');
         clients.forEach((client) => {
-            client.send(JSON.stringify({type:"file",content:{name:name,data:encodedData,type:pathM.extname(path+"\\"+name)}}));
+            client.send(JSON.stringify({type:"file",content:{name:name,data:encodedData,type:pathM.extname(path+"\\"+name),validation:hashedData}}));
         });
     });
   };

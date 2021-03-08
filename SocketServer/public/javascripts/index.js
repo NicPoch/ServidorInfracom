@@ -49,4 +49,25 @@ const askForFile=(file)=>{
 
 const download =(data)=>{
     console.log(data);    
+    sha512(data.data).then((hash)=>{
+        if(data.validation===hash)
+        {
+            console.log("Good hash");
+        }
+        else
+        {
+            console.log("Bad hash");
+            console.log(hash);
+            console.log(data.validation);
+        }
+    });
 };
+/**
+ * Sacado de stackoverflow: https://stackoverflow.com/questions/55926281/how-do-i-hash-a-string-using-javascript-with-sha512-algorithm
+ * autor: Filip Dimitrovski
+ */
+const sha512=(str)=>{
+    return crypto.subtle.digest("SHA-512", new TextEncoder("utf-8").encode(str)).then(buf => {
+      return Array.prototype.map.call(new Uint8Array(buf), x=>(('00'+x.toString(16)).slice(-2))).join('');
+    });
+}
