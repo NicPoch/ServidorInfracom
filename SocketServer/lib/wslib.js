@@ -1,5 +1,6 @@
 const WebSocket = require("ws");
 const fs = require("fs");
+const pathM = require('path');
 const crypto = require("crypto");
 
 const path="D:\\Datos\\Documents\\Universidad\\202110\\Infrastructura de Comunicaciones\\Laboratorios\\Laboratorio 4\\ServidorInfracom\\SocketServer\\files";
@@ -40,7 +41,7 @@ const wsConnection = (server) => {
         }
         let encodedData = new Buffer(data,"binary").toString('base64');
         clients.forEach((client) => {
-            client.send(JSON.stringify({type:"file",content:{name:name,data:encodedData}}));
+            client.send(JSON.stringify({type:"file",content:{name:name,data:encodedData,type:pathM.extname(path+"\\"+name)}}));
         });
     });
   };
