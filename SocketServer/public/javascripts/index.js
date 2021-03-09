@@ -57,10 +57,10 @@ const showGreet=(data)=>
 
 const askForFile=(file)=>
 {
-    let requiredUsers=Number(prompt("Number of clients to send: ",1));
+    let users=Number(prompt("Number of clients to send: ",1));
     const req ={
         name:file,
-        requiredUsers:requiredUsers
+        users:users
     };
     ws.send(JSON.stringify(req));
 }

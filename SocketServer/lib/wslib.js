@@ -7,7 +7,7 @@ const crypto = require("crypto");
 const path="D:\\Datos\\Documents\\Universidad\\202110\\Infrastructura de Comunicaciones\\Laboratorios\\Laboratorio 4\\ServidorInfracom\\SocketServer\\files";
 const clients = [];
 const files=[];
-const hash=crypto.createHash("sha512");
+const queue=[];
 
 const wsConnection = (server) =>
 {
@@ -18,6 +18,7 @@ const wsConnection = (server) =>
     clients.push(ws);
     greet(ws);
     currentUsers();
+    checkQueue();
     
     ws.on("close",()=>
     {
@@ -28,10 +29,12 @@ const wsConnection = (server) =>
 
     ws.on("message", (message) =>
     {
-      const {name} = JSON.parse(message);      
+      const {name,users} = JSON.parse(message);      
       fs.exists((path+"\\"+name),(ans)=>
       {
-          (ans) ? sendFile(name):ws.send(JSON.stringify({type:"error",content:`File ${name} doesn´t exist`}));
+          if(!ans) return ws.send(JSON.stringify({type:"error",content:`File ${name} doesn´t exist`}));
+          queue.push({name:name,users:users});
+          checkQueue();
       });
     });
   });
@@ -46,9 +49,23 @@ const wsConnection = (server) =>
     resp={type:"greet",content:files};
     ws.send(JSON.stringify(resp));
   }
-  const sendFile = (name) => 
+  const checkQueue=()=>{
+    let users=clients.length;
+    let toRemove=[];
+    queue.forEach((process)=>{
+      if(process.users<=users)
+      {
+        toRemove.push(process);
+        sendFile(process);
+      }
+    });
+    toRemove.forEach((process)=>{
+      queue.splice(queue.indexOf(process),1);
+    });
+  };
+  const sendFile = (process) => 
   {   
-    fs.readFile((path+"\\"+name),(err,data)=>
+    fs.readFile((path+"\\"+process.name),(err,data)=>
     {
         if(err)
         {
@@ -59,8 +76,10 @@ const wsConnection = (server) =>
         const hash=crypto.createHash("sha512");
         const hashedData=hash.update(encodedData).digest('hex');
         clients.forEach((client) => 
-        {
-            client.send(JSON.stringify({type:"file",content:{name:name,data:encodedData,type:pathM.extname(path+"\\"+name),validation:hashedData}}));
+        {   
+            if(process.users==0) return;
+            process.users-=1;
+            client.send(JSON.stringify({type:"file",content:{name:process.name,data:encodedData,type:pathM.extname(path+"\\"+process.name),validation:hashedData}}));
         });
     });
   };
