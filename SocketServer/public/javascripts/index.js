@@ -29,6 +29,10 @@ ws.onmessage = (msg) =>
   {
     setCount(resp.content);
   }
+  else if(resp.type ==="error")
+  {
+    console.log(msg);
+  }
 };
 
 const setCount=(count)=>

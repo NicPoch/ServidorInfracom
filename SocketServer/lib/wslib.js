@@ -31,7 +31,7 @@ const wsConnection = (server) =>
     ws.on("message", (message) =>
     {
       const {name,users} = JSON.parse(message);      
-      fs.exists((path+"\\"+name),(ans)=>
+      fs.exists((path+"/"+name),(ans)=>
       {
           if(!ans) return ws.send(JSON.stringify({type:"error",content:`File ${name} doesn´t exist`}));
           queue.push({name:name,users:users});
@@ -66,7 +66,7 @@ const wsConnection = (server) =>
   };
   const sendFile = (process) => 
   {   
-    fs.readFile((path+"\\"+process.name),(err,data)=>
+    fs.readFile((path+"/"+process.name),(err,data)=>
     {
         if(err)
         {
@@ -80,7 +80,7 @@ const wsConnection = (server) =>
         {   
             if(process.users==0) return;
             process.users-=1;
-            client.send(JSON.stringify({type:"file",content:{name:process.name,data:encodedData,type:pathM.extname(path+"\\"+process.name),validation:hashedData}}));
+            client.send(JSON.stringify({type:"file",content:{name:process.name,data:encodedData,type:pathM.extname(path+"/"+process.name),validation:hashedData}}));
         });
     });
   };
