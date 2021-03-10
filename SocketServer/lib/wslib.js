@@ -3,8 +3,9 @@ const fs = require("fs");
 const pathM = require('path');
 const crypto = require("crypto");
 
+//const path="/home/infracom/ServidorInfracom/SocketServer/files/";
 
-const path="D:\\Datos\\Documents\\Universidad\\202110\\Infrastructura de Comunicaciones\\Laboratorios\\Laboratorio 4\\ServidorInfracom\\SocketServer\\files";
+const path = pathM.resolve("../SocketServer/files");
 const clients = [];
 const files=[];
 const queue=[];
@@ -88,7 +89,7 @@ function loadFileInfo()
 {
     const names=fs.readdirSync(path);
     names.forEach((name)=>{
-        const size = (fs.statSync(path+"\\"+name).size)/1000000;
+        const size = (fs.statSync(path+"/"+name).size)/1000000;
         files.push({name:name,size:size});
     });
 }
