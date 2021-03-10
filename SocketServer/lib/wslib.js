@@ -3,7 +3,6 @@ const fs = require("fs");
 const pathM = require('path');
 const crypto = require("crypto");
 
-
 const path="D:\\Datos\\Documents\\Universidad\\202110\\Infrastructura de Comunicaciones\\Laboratorios\\Laboratorio 4\\ServidorInfracom\\SocketServer\\files";
 const clients = [];
 const files=[];
