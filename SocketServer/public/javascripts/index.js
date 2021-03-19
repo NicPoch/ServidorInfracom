@@ -1,4 +1,4 @@
-const ws = new WebSocket("ws://localhost:3000"); //cambiar cuando manejemos una dirección real 
+const ws = new WebSocket("ws://20ce55858609.ngrok.io"); //cambiar cuando manejemos una dirección real 
 const showTable = document.getElementById("files");
 const counter = document.getElementById("count");
 
@@ -72,10 +72,9 @@ const askForFile=(file)=>
 const download =(data)=>
 {
     console.log(data);    
-    sha512(data.data).then((hash)=>
+    const hash=hashCode(data.data);
+    if(data.validation===hash)
     {
-        if(data.validation===hash)
-        {
             let decodedData = atob(data.data);
             const blob = new Blob([decodedData],{type:data.type});
             downloadBlob(blob, data.name);
@@ -86,23 +85,12 @@ const download =(data)=>
             console.log(hash);
             console.log(data.validation);
         }
-    });
 };
-/**
- * Sacado de stackoverflow: https://stackoverflow.com/questions/55926281/how-do-i-hash-a-string-using-javascript-with-sha512-algorithm
- * autor: Filip Dimitrovski
- */
-const sha512=(str)=>
-{
-    return crypto.subtle.digest("SHA-512", new TextEncoder("utf-8").encode(str)).then(buf => {
-      return Array.prototype.map.call(new Uint8Array(buf), x=>(('00'+x.toString(16)).slice(-2))).join('');
-    });
-}
 /**
  * Sacado de https://dev.to/nombrekeff/download-file-from-blob-21ho
  * Autor Manolo Edge    
  */
-function downloadBlob(blob, name = 'file.txt')
+function downloadBlob(blob, name)
 {
     // Convert your blob into a Blob URL (a special url that points to an object in the browser's memory)
     const blobUrl = URL.createObjectURL(blob);
@@ -113,7 +101,6 @@ function downloadBlob(blob, name = 'file.txt')
     // Set link's href to point to the Blob URL
     link.href = blobUrl;
     link.download = name;
-  
     // Append link to the body
     document.body.appendChild(link);
   
@@ -129,4 +116,16 @@ function downloadBlob(blob, name = 'file.txt')
   
     // Remove link from body
     document.body.removeChild(link);
+}
+
+function hashCode(info)
+{
+  var hash=0;
+  for(var i =0;i<info.length;i++)
+  {
+    var character = info.charCodeAt(i);
+    hash = ((hash<<5)-hash)+character;
+    hash = hash & hash;
+  }
+  return hash;
 }

@@ -1,11 +1,11 @@
 const WebSocket = require("ws");
 const fs = require("fs");
 const pathM = require('path');
-const crypto = require("crypto");
-
-//const path="/home/infracom/ServidorInfracom/SocketServer/files/";
+const { timeEnd } = require("console");
+const { json } = require("express");
 
 const path = pathM.resolve("../SocketServer/files");
+const logs=pathM.resolve("../SocketServer/Logs");
 const clients = [];
 const files=[];
 const queue=[];
@@ -14,17 +14,17 @@ const wsConnection = (server) =>
 {
   const wss = new WebSocket.Server({ server });
 
-  wss.on("connection", (ws) => 
+  wss.on("connection", (ws,req) => 
   {
-    clients.push(ws);
+    clients.push({socket:ws,IP:req.socket.remoteAddress});
     greet(ws);
     currentUsers();
     checkQueue();
     
     ws.on("close",()=>
     {
-      const index2Remove = clients.indexOf(ws);
-      clients.splice(index2Remove,1);
+      let client2Remove = clients.filter(c=>c.socket!==ws)[0];
+      clients.splice(clients.indexOf(client2Remove),1);
       currentUsers();
     });
 
@@ -42,7 +42,7 @@ const wsConnection = (server) =>
   const currentUsers=()=>{
     clients.forEach((client)=>
     {
-      client.send(JSON.stringify({type:"count",content:clients.length}));
+      client.socket.send(JSON.stringify({type:"count",content:clients.length}));
     });
   };
   const greet=(ws)=>
@@ -64,6 +64,24 @@ const wsConnection = (server) =>
       queue.splice(queue.indexOf(process),1);
     });
   };
+  function hashCode(info)
+  {
+    var hash=0;
+    for(var i =0;i<info.length;i++)
+    {
+      var character = info.charCodeAt(i);
+      hash = ((hash<<5)-hash)+character;
+      hash = hash & hash;
+    }
+    return hash;
+  }
+  const logger=(newLog)=>{
+    const dateLog=new Date();
+    const fileName=`${logs}\\${dateLog.getFullYear()}-${dateLog.getMonth()}-${dateLog.getDay()}-${dateLog.getMinutes()}-${dateLog.getSeconds()}-log.txt`;
+    fs.writeFile(fileName,JSON.stringify(newLog),(err)=>{
+      (err) ? console.log(err) : console.log(`New Log: ${fileName}`);
+    });
+  };
   const sendFile = (process) => 
   {   
     fs.readFile((path+"/"+process.name),(err,data)=>
@@ -74,14 +92,31 @@ const wsConnection = (server) =>
             return;
         }
         const encodedData = new Buffer(data,"binary").toString('base64');
-        const hash=crypto.createHash("sha512");
-        const hashedData=hash.update(encodedData).digest('hex');
+        const hashedData =hashCode(encodedData);
+        const toLog=[];
         clients.forEach((client) => 
         {   
             if(process.users==0) return;
+            const clientInfo={}
+            clientInfo.IP=client.IP;
+            clientInfo.recibio=false;
+            clientInfo.perdio=false;
             process.users-=1;
-            client.send(JSON.stringify({type:"file",content:{name:process.name,data:encodedData,type:pathM.extname(path+"/"+process.name),validation:hashedData}}));
+            const initSend=Date.now();
+            try
+            {
+              client.socket.send(JSON.stringify({type:"file",content:{name:process.name,data:encodedData,type:pathM.extname(path+"/"+process.name),validation:hashedData}}));  
+              clientInfo.recibio=true;
+            }
+            catch (error) 
+            {
+              clientInfo.perdio=true;
+            }
+            const endSend=Date.now();
+            clientInfo.diftime=endSend-initSend;
+            toLog.push(clientInfo);
         });
+        logger(toLog);
     });
   };
 };
@@ -93,5 +128,6 @@ function loadFileInfo()
         files.push({name:name,size:size});
     });
 }
+
 loadFileInfo();
 exports.wsConnection = wsConnection;
