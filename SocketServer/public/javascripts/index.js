@@ -1,6 +1,70 @@
-const ws = new WebSocket("ws://20ce55858609.ngrok.io"); //cambiar cuando manejemos una dirección real 
+const ws = new WebSocket("ws://localhost:3000"); //cambiar cuando manejemos una dirección real 
 const showTable = document.getElementById("files");
 const counter = document.getElementById("count");
+const currentStateTable=document.getElementById("toZip");
+const downloadBtn=document.getElementById("download");
+
+downloadBtn.addEventListener("click",()=>genZip());
+
+const state=[];
+
+const showState=()=>{
+  currentStateTable.innerHTML="";
+  state.forEach((s)=>{
+    let tr=document.createElement("tr");
+    let tdType=document.createElement("td");
+    let typeTxt;
+    if(s.type=="file")
+    {
+      typeTxt=document.createTextNode("File");
+    }
+    else
+    {
+      typeTxt=document.createTextNode("Log");
+    }
+    tdType.appendChild(typeTxt);
+    tr.appendChild(tdType);
+    let tdName=document.createElement("td");
+    let nameTxt;
+    if(s.type=="file")
+    {
+      nameTxt=document.createTextNode(s.content.name);
+    }
+    else
+    {
+      nameTxt=document.createTextNode(s.name);
+    }
+    tdName.appendChild(nameTxt);
+    tr.appendChild(tdName);
+    let tdWhen=document.createElement("td");
+    let whenTxt=document.createTextNode(s.when.toString());
+    tdWhen.appendChild(whenTxt);
+    tr.appendChild(tdWhen);
+    currentStateTable.appendChild(tr);
+  });
+};
+
+function genZip()
+{
+  var zip = new JSZip();
+  var logs=zip.folder("Logs");
+  var archivosRecibidos=zip.folder("ArchivosRecibidos");
+  state.forEach((f)=>{
+    if(f.type==="file")
+    {
+      archivosRecibidos.file(f.content.name,f.content.info);
+    }
+    else
+    {
+      logs.file(f.name,JSON.stringify(f.content));
+    }
+  });
+  state.splice(0,state.length);
+  showState();
+  zip.generateAsync({type:"blob"}).then(function(content) {
+      downloadBlob(content,"ArchivoUsuario.zip");
+  });
+};
 
 
 ws.onopen=()=>
@@ -71,21 +135,39 @@ const askForFile=(file)=>
 
 const download =(data)=>
 {
+    let dateLog=new Date();
+    let log={
+      name:`${dateLog.getFullYear()}-${dateLog.getMonth()}-${dateLog.getDay()}-${dateLog.getMinutes()}-${dateLog.getSeconds()}-log.txt`,
+      succes:false,
+      failure:false,
+      file:data.name,
+      time:0
+    };
+    let timeInit=Date.now();
     console.log(data);    
     const hash=hashCode(data.data);
     if(data.validation===hash)
     {
-            let decodedData = atob(data.data);
-            const blob = new Blob([decodedData],{type:data.type});
-            downloadBlob(blob, data.name);
-        }
-        else
-        {
-            alert("Bad hash, see console");
-            console.log(hash);
-            console.log(data.validation);
-        }
+      let decodedData = atob(data.data);
+      const blob = new Blob([decodedData],{type:data.type});
+      let toState={info:blob,name:data.name};
+      state.push({type:"file",content:toState,when:new Date()});
+      log.succes=true;
+      //downloadBlob(blob, data.name);
+    }
+    else
+    {
+      alert("Bad hash, see console");
+      console.log(hash);
+      console.log(data.validation);
+      log.failure=true;
+    }
+    let endTime=Date.now();
+    log.time=endTime-timeInit;
+    state.push({type:"log",content:log,when:dateLog,name:`${dateLog.getFullYear()}-${dateLog.getMonth()}-${dateLog.getDay()}-${dateLog.getMinutes()}-${dateLog.getSeconds()}-log.txt`});
+    showState();
 };
+
 /**
  * Sacado de https://dev.to/nombrekeff/download-file-from-blob-21ho
  * Autor Manolo Edge    
