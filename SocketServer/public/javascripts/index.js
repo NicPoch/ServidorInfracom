@@ -199,7 +199,10 @@ function downloadBlob(blob, name)
     // Remove link from body
     document.body.removeChild(link);
 }
-
+/**
+ * Sacado de https://werxltd.com/wp/2010/05/13/javascript-implementation-of-javas-string-hashcode-method/
+ * Autor Corporativo Manwe    
+ */
 function hashCode(info)
 {
   var hash=0;
