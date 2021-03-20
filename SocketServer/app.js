@@ -4,23 +4,39 @@ var cookieParser = require('cookie-parser');
 var logger = require('morgan');
 var fs = require('fs');
 const { exec } = require("child_process");
+var os = require('os');
 
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
 
 var app = express();
 
-//generacion de los archivos de relleno
-if(!fs.existsSync("./files/junk100mb.dat"))
+// check for os and junk file generation
+if(process.platform==="win32")
 {
-    
-    exec("dd if=/dev/zero of=./files/junk100mb.dat  bs=100M  count=1")
+    if(!fs.existsSync("./files/junk100mb.dat"))
+    {
+        
+        exec("fsutil file createnew ./files/junk100mb.dat 104857600")   //fsutil win size in bytes
 
+    }
+    if(!fs.existsSync("./files/junk250mb.dat"))
+    {
+        exec("fsutil file createnew ./files/junk250mb.dat 262144000")
+    }
 }
-if(!fs.existsSync("./files/junk250mb.dat"))
+else
 {
-    exec("dd if=/dev/zero of=./files/junk250mb.dat  bs=250M  count=1")
+    if(!fs.existsSync("./files/junk100mb.dat"))
+    {
+        exec("dd if=/dev/zero of=./files/junk100mb.dat  bs=100M  count=1")  //fsutil unix size in Mb
+    }
+    if(!fs.existsSync("./files/junk250mb.dat"))
+    {
+        exec("dd if=/dev/zero of=./files/junk250mb.dat  bs=250M  count=1")
+    }
 }
+
 
 app.use(logger('dev'));
 app.use(express.json());
